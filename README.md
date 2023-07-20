@@ -2,10 +2,6 @@
 
 基于laravel的百分点智能媒体校对
 
-# laravel-percent
-
-基于laravel的网易易盾内容安全
-
 [![image](https://img.shields.io/github/stars/jiaoyu-cn/laravel-percent)](https://github.com/jiaoyu-cn/laravel-percent/stargazers)
 [![image](https://img.shields.io/github/forks/jiaoyu-cn/laravel-percent)](https://github.com/jiaoyu-cn/laravel-percent/network/members)
 [![image](https://img.shields.io/github/issues/jiaoyu-cn/laravel-percent)](https://github.com/jiaoyu-cn/laravel-percent/issues)

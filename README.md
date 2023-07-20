@@ -21,19 +21,7 @@ php artisan vendor:publish --provider="Githen\LaravelPercent\Providers\PercentSe
 
 ## 配置文件说明
 
-在config/logging.php中添加yidun日志配置项
-
-```php
-'percent' => [
-    'driver' => 'daily',
-    'path' => storage_path('logs/percent/percent.log'),
-    'level' => 'debug',
-    'days' => 7,
-    'permission' => 0770,
-],
-```        
-
-生成`yidun.php`上传配置文件
+生成`percent.php`上传配置文件
 
 ```php
 <?php
@@ -47,6 +35,7 @@ return [
     // 登录信息
     'name' => '',
     'password' => '',
-    'log_channel' => 'percent',//写入日志频道，空不写入
+    'disk' => 'local',
+    'auth_file' => 'app/data/percent.text'
 ];
 ```

@@ -2,6 +2,8 @@
 
 namespace Githen\LaravelPercent\Providers;
 
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\ServiceProvider as LaravelServiceProvider;
 use GuzzleHttp\Handler\CurlHandler;
 use GuzzleHttp\HandlerStack;

@@ -96,7 +96,7 @@ class PercentServiceProvider extends LaravelServiceProvider
     {
         $uri = "http://freewriting.percent.cn/batch/proofread/all";
         if ($method == 'all') {
-            $method = 'basic_word,forbidden_word,sensitive_word,sacked_official,digit,punctuatio,quotation,political_proofreader,specific_keyword';
+            $method = 'basic_word,forbidden_word,sensitive_word,sacked_official,digit,punctuation,quotation,political_proofreader,specific_keyword';
         }
         $resp = $this->httpPost($uri, ['method' => $method, 'text' => $text], true);
         if ($resp['code'] == 200) {

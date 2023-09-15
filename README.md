@@ -9,7 +9,7 @@
 ## 安装
 
 ```shell
-composer require githen/laravel-percent:~v1.0.0
+composer require githen/laravel-percent:~v2.0.0
 
 # 迁移配置文件
 php artisan vendor:publish --provider="Githen\LaravelPercent\Providers\PercentServiceProvider"
@@ -29,9 +29,18 @@ return [
     |
     */
     // 登录信息
-    'name' => '',
-    'password' => '',
+    'name' => 'admin',
+    'password' => '111111',
     'disk' => 'local',
-    'auth_file' => 'app/data/percent.text'
+    'auth_file' => 'app/data/percent/admin.txt',// 每个账号的auth_file不能相同
+    'sub_account' => [
+        10 => [
+            'name' => 'admin1',
+            'password' => '111111',
+            'disk' => 'local',
+            'auth_file' => 'app/data/percent/admin1.txt', 
+        ],
+    ]
+    
 ];
 ```

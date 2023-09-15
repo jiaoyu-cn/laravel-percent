@@ -10,5 +10,5 @@ return [
     'name' => '',
     'password' => '',
     'disk' => 'local',
-    'auth_file' => 'app/data/percent.text'
+    'auth_file' => 'app/data/percent/percent.txt'
 ];

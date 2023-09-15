@@ -44,8 +44,24 @@ class PercentServiceProvider extends LaravelServiceProvider
      * @param $config
      * @return string
      */
-    private function getAuthorization($config, $refresh = false)
+    private function getAuthorization($refresh = false, $subKey = 0)
     {
+        if (!$config = config('percent')) {
+            return $this->message('2000', "配置文件不存在");
+        }
+        // 子账号KEY
+        if (!empty($subKey)) {
+            $subAccountConfig = config('percent.sub_account.' . $subKey);
+            if (!empty($subAccountConfig)) {
+                $config = $subAccountConfig;
+            }
+        }
+        // 配置校验
+        foreach (['name', 'password', 'disk', 'auth_file'] as $key) {
+            if (empty($config[$key])) {
+                return $this->message('2000', "配置信息【" . $key . "】不能为空");
+            }
+        }
         $disk = $config['disk'];
         $authFile = $config['auth_file'];
         if (!$refresh && Storage::disk($disk)->has($authFile)) {
@@ -53,11 +69,11 @@ class PercentServiceProvider extends LaravelServiceProvider
             if (!empty($obj)) {
                 $obj = json_decode($obj, true);
                 if (!empty($obj['expire_time']) && $obj['expire_time'] - time() > 300) {
-                    return $obj['token'];
+                    return $this->message('0000', "登录成功", ['token' => $obj['token']]);
                 }
             }
         }
-        $loginInfo = $this->login($config['name'], $config['password']);
+        $loginInfo = $this->login($config['name'], $config['password'], $subKey);
         if ($loginInfo['code'] == '0000') {
             $obj = [
                 'token' => $loginInfo['data']['token'],
@@ -68,9 +84,9 @@ class PercentServiceProvider extends LaravelServiceProvider
             } else {
                 Storage::disk($disk)->put($authFile, json_encode($obj), 'public');
             }
-            return $obj['token'];
+            return $this->message('0000', "登录成功", ['token' => $obj['token']]);
         }
-        return '';
+        return $this->message($loginInfo['code'], $loginInfo['message']);
     }
 
     /** 登录接口
@@ -78,11 +94,11 @@ class PercentServiceProvider extends LaravelServiceProvider
      * @param $password
      * @return array|mixed
      */
-    public function login($name, $password)
+    public function login($name, $password, $subKey = 0)
     {
-        $uri = "http://freewriting.percent.cn/single/login";
+        $uri = "/single/login";
 
-        $resp = $this->httpPost($uri, ['name' => $name, 'password' => $password], false);
+        $resp = $this->httpPost($uri, ['name' => $name, 'password' => $password], $subKey);
 
         return $this->message($resp['code'] != 200 ? '2000' : '0000', $resp['message'], $resp['data'] ?? []);
     }
@@ -92,13 +108,13 @@ class PercentServiceProvider extends LaravelServiceProvider
      * @param $text
      * @return array|mixed
      */
-    public function batchProofreadAll($method, $text)
+    public function batchProofreadAll($method, $text, $subKey = 0)
     {
-        $uri = "http://freewriting.percent.cn/batch/proofread/all";
+        $uri = "/batch/proofread/all";
         if ($method == 'all') {
             $method = 'basic_word,forbidden_word,sensitive_word,sacked_official,digit,punctuation,quotation,political_proofreader,specific_keyword';
         }
-        $resp = $this->httpPost($uri, ['method' => $method, 'text' => $text], true);
+        $resp = $this->httpPost($uri, ['method' => $method, 'text' => $text], $subKey);
         if ($resp['code'] == 200) {
             $code = '0000';//检测完毕，通过
         } else if ($resp['code'] == 201) {
@@ -115,22 +131,21 @@ class PercentServiceProvider extends LaravelServiceProvider
      * @param $params
      * @return array|mixed
      */
-    public function httpPost($uri, $params = [], $isLogin = true)
+    public function httpPost($uri, $params = [], $subKey = 0)
     {
-        if (!$config = config('percent')) {
-            return $this->message('2000', "获取配置文件失败");
-        }
+        $baseURL = 'http://freewriting.percent.cn';
         $options = ['headers' => [
             'Content-Type' => 'application/json; charset=utf-8',
         ],
             'json' => $params,
         ];
+        $isLogin = $uri != "/single/login";
         if ($isLogin) {
-            $authorization = $this->getAuthorization($config);
-            if (empty($authorization)) {
-                return $this->message('2000', '登录失败');
+            $authorization = $this->getAuthorization(false, $subKey);
+            if ($authorization['code'] != '0000') {
+                return $this->message($authorization['code'], $authorization['message']);
             }
-            $options['headers']['authorization'] = $authorization;
+            $options['headers']['authorization'] = $authorization['data']['token'];
         }
         $handlerStack = HandlerStack::create(new CurlHandler());
         $handlerStack->push(Middleware::retry($this->retryDecider(), $this->retryDelay()));
@@ -140,18 +155,20 @@ class PercentServiceProvider extends LaravelServiceProvider
             'handler' => $handlerStack,
         ]);
         try {
+            $uri = $baseURL . $uri;
             $response = $httpClient->request('POST', $uri, $options);
             $content = json_decode($response->getBody()->getContents(), true);
             if ($isLogin && $content['code'] == 401) {
                 // 401 token过期重试
-                $authorization = $this->getAuthorization($config, true);
-                if (!empty($authorization)) {
-                    $options['headers']['authorization'] = $authorization;
-                    $response = $httpClient->request('POST',
-                        $uri,
-                        $options);
-                    $content = json_decode($response->getBody()->getContents(), true);
+                $authorization = $this->getAuthorization(true, $subKey);
+                if ($authorization['code'] != '0000') {
+                    return $this->message($authorization['code'], $authorization['message']);
                 }
+                $options['headers']['authorization'] = $authorization['data']['token'];
+                $response = $httpClient->request('POST',
+                    $uri,
+                    $options);
+                $content = json_decode($response->getBody()->getContents(), true);
             }
             return $content;
         } catch (\Exception $e) {

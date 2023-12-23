@@ -150,7 +150,7 @@ class PercentServiceProvider extends LaravelServiceProvider
         $handlerStack = HandlerStack::create(new CurlHandler());
         $handlerStack->push(Middleware::retry($this->retryDecider(), $this->retryDelay()));
         $httpClient = new GuzzleHttpClient([
-            'timeout' => 30,
+            'timeout' => 60,
             'verify' => false,
             'handler' => $handlerStack,
         ]);

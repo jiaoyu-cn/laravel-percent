@@ -9,7 +9,7 @@
 ## 安装
 
 ```shell
-composer require githen/laravel-percent:~v2.0.0
+composer require githen/laravel-percent:~v1.0.0
 
 # 迁移配置文件
 php artisan vendor:publish --provider="Githen\LaravelPercent\Providers\PercentServiceProvider"
